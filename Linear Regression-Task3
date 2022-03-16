@@ -51,5 +51,107 @@ plt.title('Sub-Category Wise Sales Analysis', fontsize = 30)
 plt.legend()
 plt.xticks(rotation = 90)
 plt.show()
+plt.figure(figsize = (15,15))
+plt.pie(df_sub_category['Discount'], labels = df_sub_category.index, autopct = '%1.1f%%')
+plt.title('Sub-Category Wise Discount Analysis', fontsize = 30)
+plt.legend()
+plt.xticks(rotation = 90)
+plt.show()
+df_sub_category.sort_values('Profit')[['Sales','Profit']].plot(kind='bar',figsize= (15,7),label=['Avg Sales Price($)','Profit($)'])
+sns.pairplot(df,hue='State')
+df['State'].value_counts()
+plt.figure(figsize=(18,10))
+sns.countplot(x = 'State',data = df, palette = 'tab10')
+plt.xticks(rotation=90)
+plt.title('State',fontsize=30)
+df['State'].value_counts().head(10)
+df_state= df.groupby(['State'])[['Sales', 'Discount', 'Profit']].mean()
+df_state.head(10)
+df_state1=df_state.sort_values('Profit')
+df_state1[['Profit']].plot(kind = 'bar', figsize = (15,8))
+plt.title('State wise Profit Analysis', fontsize = 30)
+plt.ylabel('Profit per Sate')
+plt.xlabel('States')
+plt.show()
+df_state['Sales'].plot(kind='pie',figsize = (25,20),autopct='%1.1f%%',startangle=90,shadow=True)    
+plt.title('State wise analysis of Sale',fontsize=30)
+df_state1['Discount'].plot(kind='bar',figsize=(18,8))
+plt.title('State wise analysis of Discount', fontsize=30)
+sns.pairplot(df,hue='Region')
+df['Region'].value_counts()
+sns.countplot(x = 'Region',data = df, palette = 'tab10')
+plt.title('Region',fontsize=30)
+df_region = df.groupby(['Region'])[['Sales', 'Discount', 'Profit']].mean()
+df_region
+df_region.plot.pie(subplots=True,figsize=(18, 20),autopct='%1.1f%%',labels = df_region.index) 
+sns.pairplot(df,hue='Segment')
+df['Segment'].value_counts()
+sns.countplot(x = 'Segment',data = df, palette = 'tab10')
+plt.title('Segment',fontsize=30)
+df['Segment'].value_counts()
+df_segment= df.groupby(['Segment'])[['Sales', 'Discount', 'Profit']].mean()
+df_segment
+df_segment.plot.pie(subplots=True, autopct='%1.1f%%',figsize=(18, 20), startangle=90,shadow=True,labels = df_segment.index)                     
+plt.title('Segment wise analysis of Sale, Discount, profit')
+sns.pairplot(df,hue='Quantity')
+df['Quantity'].value_counts()
+sns.countplot(x = 'Quantity',data = df, palette = 'tab10')
+plt.title('Quantity',fontsize=30)
+df_quantity = df.groupby(['Quantity'])[['Sales', 'Discount', 'Profit']].mean()
+df_quantity.head(10)
+df_quantity.plot.pie(subplots=True,autopct='%1.1f%%',figsize=(20, 20),pctdistance=0.69,startangle=90,shadow=True,labels = df_quantity.index)
+plt.title('Quantity wise analysis of Sale, Discount, profit')
+sns.pairplot(df,hue='Discount')
+df['Discount'].value_counts()
+sns.countplot(x = 'Discount',data = df, palette = 'tab10')
+plt.title('Discount',fontsize=30)
+fig, axs = plt.subplots(ncols=2, nrows = 2, figsize = (15,15))
+sns.distplot(df['Sales'], color = 'red',  ax = axs[0][0])
+sns.distplot(df['Profit'], color = 'green',  ax = axs[0][1])
+sns.distplot(df['Quantity'], color = 'orange',  ax = axs[1][0])
+sns.distplot(df['Discount'], color = 'blue',  ax = axs[1][1])
+axs[0][0].set_title('Sales Distribution', fontsize = 20)
+axs[0][1].set_title('Profit Distribution', fontsize = 20)
+axs[1][0].set_title('Quantity Distribution', fontsize = 20)
+axs[1][1].set_title('Discount Distribution', fontsize = 20)
+plt.show()
+df['Country'].value_counts()
+df1 = df['State'].value_counts()
+df1.head(10)
+df1.plot(kind='bar',figsize=(15,5))
+plt.ylabel('Frequency / Number of deals')
+plt.xlabel('States')
+plt.title('State Wise Dealings', fontsize = 30)
+plt.show()
+df['State'].value_counts().mean()
+df2 = df['City'].value_counts()
+df2=df2.head(50)
+df2.plot(kind='bar',figsize=(15,5))
+plt.ylabel('Frequency / Number of deals')
+plt.xlabel('City')
+plt.title('City Wise Dealings', fontsize = 30)
+plt.show()
+df['City'].value_counts().mean()
 
+
+
+THIS IS THE AVERAGE 
+Average number of deal per city is 19.
+The 3 top deals in a city
+New York City
+Los Angeles
+Philadelphia
+Sales and profit are moderately correlated. Quantity and profit are less moderately correlated Discount and profit are negatively correlated
+The top 3 state where deals are Highest.
+California
+New York
+Texas
+
+                  
+                  
+                  
+                        
+          
+                                                              
+                                                              
                      

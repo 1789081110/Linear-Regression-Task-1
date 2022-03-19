@@ -1,0 +1,236 @@
+#import libraries 
+import numpy as np
+import pandas as pd
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+import statsmodels.api as sm 
+
+from sklearn.model_selection import ShuffleSplit
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
+from sklearn.multioutput import RegressorChain
+from sklearn.ensemble import RandomForestRegressor
+
+import warnings
+warnings.filterwarnings('ignore')
+
+pip install yfinance --upgrade --no-cache-dir
+
+import yfinance as yf
+bse_data = yf.download('^BSESN', start='2015-01-01', end='2020-06-30')
+#since our Textual Analysis dataset containing news from Times of India News Headlines is only till 30th June 2020. 
+#So we will assume today is 29th June 2020 and tomorrow is 30th June 2020. And we have to predict the stock price ((high+low+close)/3) and closing price of BSE index 
+#for tomorrow 30th June 2020.
+unseenbse_data = yf.download('^BSESN', start='2020-06-30', end='2020-07-01')
+
+bse_data.isnull().sum()
+
+unseenbse_data.isnull().sum()
+
+bse_data.columns
+
+unseenbse_data.columns
+
+bse_data.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Adj Close': 'adjclose', 'Volume': 'volume'}, inplace = True)
+
+unseenbse_data.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Adj Close': 'adjclose', 'Volume': 'volume'}, inplace = True)
+
+bse_data.info()
+
+unseenbse_data.info()
+
+bse_data.head()
+
+bse_data.tail()
+
+unseenbse_data.head()
+
+bse_data.reset_index(inplace=True)
+bse_data.rename(columns={'Date': 'date'}, inplace = True)
+bse_data.head()
+
+unseenbse_data.reset_index(inplace=True)
+unseenbse_data.rename(columns={'Date': 'date'}, inplace = True)
+unseenbse_data.head()
+
+bse_data['date'] = pd.to_datetime(bse_data['date'], format = '%Y%m%d')
+unseenbse_data['date'] = pd.to_datetime(unseenbse_data['date'], format = '%Y%m%d')
+#before moving forward let us calculate first the actual price
+unseenbsedata_price = round((unseenbse_data['high'] + unseenbse_data['low'] + unseenbse_data['close'])/ 3, 2)
+unseenbsedata_price  #actual price
+
+def stock_weekmovingavg(wks, df):
+    dateclose_data = pd.DataFrame({'date': df['date'], 'close':df['close']})
+    dateclose_data.set_index('date', inplace=True)
+    num = wks * 5                                 #calculating the number of days in the week. 5 days because BSE is open for 5 days / week
+    dateclose_data['movingavg'] = dateclose_data['close'].rolling(window=num).mean().shift()
+    return dateclose_data.dropna()
+
+stock_weekmovingavg(4, bse_data).head()
+
+stock_weekmovingavg(4, bse_data).plot()
+
+altdata_fourweek = stock_weekmovingavg(4, bse_data)
+altdata_fourweek.reset_index(inplace=True)
+altdata_fourweek.rename(columns={list(altdata_fourweek)[0]:'date'}, inplace=True)
+
+plotfourweek = altdata_fourweek.filter(['date', 'movingavg'], axis=1) #df.copy()
+plotfourweek.index = pd.Index(sm.tsa.datetools.dates_from_range('2015', length=len(altdata_fourweek['date']))) 
+del plotfourweek['date']
+sm.graphics.tsa.plot_pacf(plotfourweek.values.squeeze())
+plt.show()
+
+stock_weekmovingavg(16, bse_data).head()
+
+stock_weekmovingavg(16, bse_data).plot()
+
+altdata_sixteenweek = stock_weekmovingavg(16, bse_data)
+altdata_sixteenweek.reset_index(inplace=True)
+altdata_sixteenweek.rename(columns={list(altdata_sixteenweek)[0]:'date'}, inplace=True)
+
+plotsixteenweek = altdata_sixteenweek.filter(['date', 'movingavg'], axis=1) #df.copy()
+plotsixteenweek.index = pd.Index(sm.tsa.datetools.dates_from_range('2015', length=len(altdata_sixteenweek['date']))) 
+del plotsixteenweek['date']
+sm.graphics.tsa.plot_pacf(plotsixteenweek.values.squeeze())
+plt.show()
+
+stock_weekmovingavg(52, bse_data).head()
+
+stock_weekmovingavg(52, bse_data).plot()
+
+altdata_fiftytwoweek = stock_weekmovingavg(52, bse_data)
+altdata_fiftytwoweek.reset_index(inplace=True)
+altdata_fiftytwoweek.rename(columns={list(altdata_fiftytwoweek)[0]:'date'}, inplace=True)
+plotfiftytwoweek = altdata_fiftytwoweek.filter(['date', 'movingavg'], axis=1) #df.copy()
+plotfiftytwoweek.index = pd.Index(sm.tsa.datetools.dates_from_range('2015', length=len(altdata_fiftytwoweek['date']))) 
+del plotfiftytwoweek['date']
+sm.graphics.tsa.plot_pacf(plotfiftytwoweek.values.squeeze())
+plt.show()
+
+def rollingwindows(days, df):
+    data = df.filter(['date','open','high','low','close'], axis=1) #df.copy()
+    data.set_index('date', inplace=True)
+    rollingwindows_data = data.rolling(window=days).mean().shift()
+    return rollingwindows_data.dropna()
+
+
+rollingwindows(10, bse_data).head()
+
+rollingwindows(10, bse_data).plot()
+
+altdata_tendays = rollingwindows(10, bse_data)
+altdata_tendays.reset_index(inplace=True)
+altdata_tendays.rename(columns={list(altdata_tendays)[0]:'date'}, inplace=True)
+
+rollingwindows(50, bse_data).head()
+
+rollingwindows(50, bse_data).plot()
+
+altdata_fiftydays = rollingwindows(50, bse_data)
+altdata_fiftydays.reset_index(inplace=True)
+altdata_fiftydays.rename(columns={list(altdata_fiftydays)[0]:'date'}, inplace=True)
+
+def boolean_shock(percent, df, col):
+    data = df.filter(['date', col], axis=1) #df.copy()
+    data.set_index('date', inplace=True)
+    data['percentchg'] = (data[col].pct_change()) * 100  #percentage change compare to previous volume using pct_change() function
+    data['shock'] = data['percentchg'].apply(lambda x: 1 if x >= percent else 0)
+    data.drop(col, axis = 1, inplace = True)
+    return data.dropna()
+boolean_shock(10, bse_data, 'volume')
+
+altdata_volpercentchg = boolean_shock(10, bse_data, 'volume')
+altdata_volpercentchg.reset_index(inplace=True)
+altdata_volpercentchg.rename(columns={list(altdata_volpercentchg)[0]:'date'}, inplace=True)
+plotvolpercentchg = altdata_volpercentchg.filter(['date', 'percentchg'], axis=1) #df.copy()
+plotvolpercentchg.index = pd.Index(sm.tsa.datetools.dates_from_range('2015', length=len(altdata_volpercentchg['date']))) 
+del plotvolpercentchg['date']
+sm.graphics.tsa.plot_pacf(plotvolpercentchg.values.squeeze())
+plt.show()
+
+
+boolean_shock(2, bse_data, 'close')
+
+altdata_closepercentchg2 = boolean_shock(2, bse_data, 'close')
+altdata_closepercentchg2.reset_index(inplace=True)
+altdata_closepercentchg2.rename(columns={list(altdata_closepercentchg2)[0]:'date'}, inplace=True)
+plotclosepercentchg2 = altdata_closepercentchg2.filter(['date', 'percentchg'], axis=1) #df.copy()
+plotclosepercentchg2.index = pd.Index(sm.tsa.datetools.dates_from_range('2015', length=len(altdata_closepercentchg2['date']))) 
+del plotclosepercentchg2['date']
+sm.graphics.tsa.plot_pacf(plotclosepercentchg2.values.squeeze())
+plt.show()
+
+boolean_shock(10, bse_data, 'close')
+
+altdata_closepercentchg10 = boolean_shock(10, bse_data, 'close')
+altdata_closepercentchg10.reset_index(inplace=True)
+altdata_closepercentchg10.rename(columns={list(altdata_closepercentchg10)[0]:'date'}, inplace=True)
+plotclosepercentchg10 = altdata_closepercentchg10.filter(['date', 'percentchg'], axis=1) #df.copy()
+plotclosepercentchg10.index = pd.Index(sm.tsa.datetools.dates_from_range('2015', length=len(altdata_closepercentchg10['date']))) 
+del plotclosepercentchg10['date']
+sm.graphics.tsa.plot_pacf(plotclosepercentchg10.values.squeeze())
+plt.show()
+
+def priceboolean_shock(percent, df):
+    df['date'] = pd.to_datetime(df['date'])
+    data = df.filter(['date', 'high', 'low','close'], axis=1) #df.copy()
+    data.set_index('date', inplace=True)
+    data['priceavg'] = (data['high'] + data['low'] + data['close']) / 3
+    data['shock'] = (data['priceavg'].pct_change()) * 100
+    data['shock'] = data['shock'].apply(lambda x: 1 if x >= percent else 0)
+    data.drop(['high', 'low', 'close'], axis = 1, inplace = True)
+    return data
+
+priceboolean_shock(10, bse_data)
+
+altdata_pricepercentchg = priceboolean_shock(10, bse_data)
+altdata_pricepercentchg.reset_index(inplace=True)
+altdata_pricepercentchg.rename(columns={list(altdata_pricepercentchg)[0]:'date'}, inplace=True)
+plotpricepercentchg = altdata_pricepercentchg.filter(['date', 'priceavg'], axis=1) #df.copy()
+plotpricepercentchg.index = pd.Index(sm.tsa.datetools.dates_from_range('2015', length=len(altdata_pricepercentchg['date']))) 
+del plotpricepercentchg['date']
+sm.graphics.tsa.plot_pacf(plotpricepercentchg.values.squeeze())
+plt.show()
+
+def reverseboolean_shock(percent, df, col):
+    data = df.filter(['date', col], axis=1) #df.copy()
+    data.set_index('date', inplace=True)
+    data = data.reindex(index=data.index[::-1])
+    data['percentchg'] = (data[col].pct_change()) * 100
+    data['shock'] = data['percentchg'].apply(lambda x: 1 if x > percent else 0)
+    data.drop(col, axis = 1, inplace = True)
+    data = data.reindex(index=data.index[::-1])
+    return data.dropna()
+reverseboolean_shock(2, bse_data, 'close')
+
+altdata_closepercentchg = reverseboolean_shock(2, bse_data, 'close')
+altdata_closepercentchg.reset_index(inplace=True)
+altdata_closepercentchg.rename(columns={list(altdata_closepercentchg)[0]:'date'}, inplace=True)
+
+
+reverseboolean_shock(5, bse_data, 'close')
+
+altdata_closepercentchg5 = reverseboolean_shock(5, bse_data, 'close')
+altdata_closepercentchg5.reset_index(inplace=True)
+altdata_closepercentchg5.rename(columns={list(altdata_closepercentchg5)[0]:'date'}, inplace=True)
+
+def pricereverseboolean_shock(percent, df):
+    data = df.filter(['date', 'high', 'low','close'], axis=1) #df.copy()
+    data.set_index('date', inplace=True)
+    data = data.reindex(index=data.index[::-1])
+    data['reversepriceavg'] = (data['high'] + data['low'] + data['close']) / 3
+    data['shock'] = (data['reversepriceavg'].pct_change()) * 100
+    data['shock'] = data['shock'].apply(lambda x: 1 if x >= percent else 0)
+    data.drop(['high', 'low', 'close'], axis = 1, inplace = True)
+    data = data.reindex(index=data.index[::-1])
+    return data.dropna()
+pricereverseboolean_shock(2, bse_data)
+
+altdata_reversepricepercentchg = pricereverseboolean_shock(2, bse_data)
+altdata_reversepricepercentchg.reset_index(inplace=True)
+altdata_reversepricepercentchg.rename(columns={list(altdata_reversepricepercentchg)[0]:'date'}, inplace=True)
+
+
+
